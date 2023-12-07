@@ -109,7 +109,7 @@ class udp_server:
                         dhcp_packet.xid
                     ))
                     logger.debug('(68) msg is %s' % msg)
-        socks = server.udp_socket()
+        socks = self.udp_socket()
         return {'dhcpc' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def dhcpd(self, logger):
         logger.info(f'(67) {self.unicast} started...')
@@ -170,7 +170,7 @@ class udp_server:
                         dhcp_packet.chaddr, \
                         dhcp_packet.xid
                     ))
-        socks = server.udp_socket()
+        socks = self.udp_socket()
         return {'dhcpd' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def proxy_dhcpd(self, logger):
         logger.info(f'(4011) {self.siaddr} started...')
@@ -220,7 +220,7 @@ class udp_server:
                     ack_packet = ack_packet.asbytes
                     logger.debug(f'(4011) ack_packet is {ack_packet}')
                     socks.sendto(ack_packet, (str(dhcp_packet.ciaddr), 4011))
-        socks = server.udp_socket()
+        socks = self.udp_socket()
         return {'proxy_dhcpd' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def tftpd(self, logger, path):
         '''
