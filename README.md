@@ -16,7 +16,7 @@ PS C:\Users\Administrator\Downloads\own-socket> Remove-Item .\*.log ; python .\s
 
 ```plain
 - load ipxe-x86_64.efi pass
-+ load boot.ipxe       fail
+- load boot.ipxe       fail
 ```
 
 ## Log
