@@ -25,7 +25,6 @@ class udp_server:
         self.mask = '255.255.255.0'
         self.router = '192.168.0.251'
         self.dns = '223.5.5.5'
-#        self.broadcast = ip_interface(f'{self.siaddr}/{self.mask}').network.broadcast_address
         self.broadcast = '255.255.255.255'
         self.lease_time = 120
         self.begin = '192.168.0.100'
@@ -73,7 +72,7 @@ class udp_server:
     def udp_socket(self):
         socks = socket(AF_INET, SOCK_DGRAM)
         socks.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-#        socks.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
+        socks.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         return socks
     def get_logger(self, root_name, child_name):
         '''
@@ -104,8 +103,7 @@ class udp_server:
                     logger.info(f'(68) discovering for another DHCPd on LAN') if not another_dhcpd else ''
                     logger.info(f'(68) another DHCPd detected on your LAN @ {dhcp_server}')
                     another_dhcpd.append(dhcp_server)
-                    logger.info('(68) {} {} received, MAC {}, XID {}'.format(
-                        dhcp_packet.op, \
+                    logger.info('(68) {} received, MAC {}, XID {}'.format(
                         dhcp_packet.msg_type, \
                         dhcp_packet.chaddr, \
                         dhcp_packet.xid
@@ -114,20 +112,6 @@ class udp_server:
         socks = server.udp_socket()
         return {'dhcpc' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def dhcpd(self, logger):
-        '''
-        info(f'DHCPd (67) {self.unicast} started...')
-        info(f'DHCPd (67) DISCOVER received, MAC FC-34-97-BB-02-75, XID EDC81224')
-        info(f'DHCPd (67) OFFER sent, IP 0.0.0.0, XID EDC81224')
-        info(f'DHCPd (67) REQUEST discarded, MAC FC-34-97-BB-02-75, XID EDC81224')
-        info(f'DHCPd (67) DISCOVER received, MAC FC-34-97-BB-02-75, XID DED16C44')
-        info(f'DHCPd (67) iPXE user-class detected')
-        info(f'DHCPd (67) OFFER sent, IP 0.0.0.0, XID DED16C44')
-        info(f'DHCPd (67) DISCOVER discarded, MAC 00-A1-00-09-45-00, XID A8AC00FB')
-        info(f'DHCPd (67) DISCOVER discarded, MAC 00-A1-00-09-45-01, XID A8AC01FB')
-        info(f'DHCPd (67) DISCOVER discarded, MAC 00-73-88-1C-DE-02, XID 941401FB')
-        info(f'DHCPd (67) REQUEST discarded, MAC FC-34-97-BB-02-75, XID DED16C44')
-        info(f'DHCPd (67) stopped...')
-        '''
         logger.info(f'(67) {self.unicast} started...')
         def _stop():
             logger.info(f'(67) stopped...')
@@ -142,15 +126,19 @@ class udp_server:
                     continue
                 vendor_class = dhcp_packet.options.by_code(60)
                 if dhcp_packet.msg_type == 'DHCPDISCOVER' and vendor_class:
-                    logger.info('(67) {} {} received, MAC {}, XID {}'.format(
-                        dhcp_packet.op, \
+                    logger.info('(67) {} received, MAC {}, XID {}'.format(
                         dhcp_packet.msg_type, \
                         dhcp_packet.chaddr, \
                         dhcp_packet.xid
                     ))
                     logger.debug('(67) msg is %s' % msg)
                     user_class = dhcp_packet.options.by_code(77)
-                    file_name = self.menu if user_class else self.kernel
+                    file_name = self.menu
+                    if user_class:
+                        logger.info(f'(67) iPXE user-class detected')
+                        file_name = self.menu
+                    else:
+                        file_name = self.kernel
                     offer_packet = DHCPPacket.Offer(
                         seconds=0, \
                         tx_id=dhcp_packet.xid, \
@@ -168,8 +156,7 @@ class udp_server:
                         ])
                     )
                     offer_packet.siaddr = ip_interface(self.siaddr).ip
-                    logger.info('(67) {} {} sent, {}:68, XID {}'.format(
-                        offer_packet.op, \
+                    logger.info('(67) {} sent, {}:68, XID {}'.format(
                         offer_packet.msg_type, \
                         self.broadcast, \
                         offer_packet.xid
@@ -177,16 +164,15 @@ class udp_server:
                     offer_packet = offer_packet.asbytes
                     logger.debug(f'(67) offer_packet is {offer_packet}')
                     socks.sendto(offer_packet, (str(self.broadcast), 68))
+                else:
+                    logger.info('(67) {} discarded, MAC {}, XID {}'.format(
+                        dhcp_packet.msg_type, \
+                        dhcp_packet.chaddr, \
+                        dhcp_packet.xid
+                    ))
         socks = server.udp_socket()
         return {'dhcpd' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def proxy_dhcpd(self, logger):
-        '''
-        info(f'PorxyDHCPd (4011) {multicast/unicast:4011} started...')
-        info(f'PorxyDHCPd (4011) REQUEST received, MAC FC-34-97-BB-02-75, IP 192.168.0.10, XID C866AA87')
-        info(f'PorxyDHCPd (4011) Proxy boot filename empty?')
-        info(f'PorxyDHCPd (4011) DHCP_ACK sent, IP 192.168.0.10 4011, xid C866AA87')
-        info(f'PorxyDHCPd (4011) stopped...')
-        '''
         logger.info(f'(4011) {self.siaddr} started...')
         def _stop():
             logger.info(f'(4011) stopped...')
@@ -201,8 +187,7 @@ class udp_server:
                     continue
                 uuid_guid_based_client = dhcp_packet.options.by_code(97)
                 if uuid_guid_based_client:
-                    logger.info('(4011) {} {} received, MAC {}, XID {}'.format(
-                        dhcp_packet.op, \
+                    logger.info('(4011) {} received, MAC {}, XID {}'.format(
                         dhcp_packet.msg_type, \
                         dhcp_packet.chaddr, \
                         dhcp_packet.xid
@@ -227,8 +212,7 @@ class udp_server:
                         ])
                     )
                     ack_packet.siaddr = ip_interface(self.siaddr).ip
-                    logger.info('(4011) {} {} sent, {}:4011, XID {}'.format(
-                        ack_packet.op, \
+                    logger.info('(4011) {} sent, {}:4011, XID {}'.format(
                         ack_packet.msg_type, \
                         ack_packet.ciaddr, \
                         ack_packet.xid
