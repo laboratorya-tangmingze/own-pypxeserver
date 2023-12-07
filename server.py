@@ -141,13 +141,14 @@ class udp_server:
                     logger.warning(f'(67) {e}')
                     continue
                 vendor_class = dhcp_packet.options.by_code(60)
-                if vendor_class:
+                if dhcp_packet.msg_type == 'DHCPDISCOVER' and vendor_class:
                     logger.info('(67) {} {} received, MAC {}, XID {}'.format(
                         dhcp_packet.op, \
                         dhcp_packet.msg_type, \
                         dhcp_packet.chaddr, \
                         dhcp_packet.xid
                     ))
+                    logger.debug('(67) msg is %s' % msg)
                     user_class = dhcp_packet.options.by_code(77)
                     file_name = self.menu if user_class else self.kernel
                     offer_packet = DHCPPacket.Offer(
@@ -176,7 +177,6 @@ class udp_server:
                     offer_packet = offer_packet.asbytes
                     logger.debug(f'(67) offer_packet is {offer_packet}')
                     socks.sendto(offer_packet, (str(self.broadcast), 68))
-                    logger.debug('(67) msg is %s' % msg)
         socks = server.udp_socket()
         return {'dhcpd' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def proxy_dhcpd(self, logger):
@@ -199,13 +199,43 @@ class udp_server:
                 except MalformedPacketError as e:
                     logger.warning(f'(4011) {e}')
                     continue
-                logger.info('(4011) {} {} received, MAC {}, XID {}'.format(
-                    dhcp_packet.op, \
-                    dhcp_packet.msg_type, \
-                    dhcp_packet.chaddr, \
-                    dhcp_packet.xid
-                ))
-                logger.debug('(4011) msg is %s' % msg)
+                uuid_guid_based_client = dhcp_packet.options.by_code(97)
+                if uuid_guid_based_client:
+                    logger.info('(4011) {} {} received, MAC {}, XID {}'.format(
+                        dhcp_packet.op, \
+                        dhcp_packet.msg_type, \
+                        dhcp_packet.chaddr, \
+                        dhcp_packet.xid
+                    ))
+                    logger.debug('(4011) msg is %s' % msg)
+                    file_name = self.kernel
+                    ack_packet = DHCPPacket.Ack(
+                        seconds=0, \
+                        tx_id=dhcp_packet.xid, \
+                        mac_addr=dhcp_packet.chaddr, \
+                        yiaddr=self.unicast, \
+                        use_broadcast=False, \
+                        relay=self.unicast, \
+                        sname=gethostname().encode('unicode-escape'), \
+                        fname=file_name.encode('unicode-escape'), \
+                        option_list=OptionList([
+                            options.short_value_to_object(13, round(getsize(join(self.path, file_name))/1024)*2), \
+                            options.short_value_to_object(54, ip_interface(self.siaddr).ip.packed), \
+                            options.short_value_to_object(60, 'PXEClient'), \
+                            options.short_value_to_object(66, self.siaddr), \
+                            options.bytes_to_object(uuid_guid_based_client.asbytes)
+                        ])
+                    )
+                    ack_packet.siaddr = ip_interface(self.siaddr).ip
+                    logger.info('(4011) {} {} sent, {}:4011, XID {}'.format(
+                        ack_packet.op, \
+                        ack_packet.msg_type, \
+                        ack_packet.ciaddr, \
+                        ack_packet.xid
+                    ))
+                    ack_packet = ack_packet.asbytes
+                    logger.debug(f'(4011) ack_packet is {ack_packet}')
+                    socks.sendto(ack_packet, (str(dhcp_packet.ciaddr), 4011))
         socks = server.udp_socket()
         return {'proxy_dhcpd' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def tftpd(self, logger, path):
