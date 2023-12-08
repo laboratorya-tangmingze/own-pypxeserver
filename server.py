@@ -21,7 +21,7 @@ from time import sleep
 class udp_server:
     def __init__(self, debug=False, log_file='server.log'):
         self.unicast = '0.0.0.0'
-        self.siaddr = '192.168.0.2'
+        self.siaddr = '192.168.0.8'
         self.mask = '255.255.255.0'
         self.router = '192.168.0.251'
         self.dns = '223.5.5.5'
@@ -29,7 +29,7 @@ class udp_server:
         self.lease_time = 120
         self.begin = '192.168.0.100'
         self.end = '192.168.0.110'
-        self.path = r'C:\Users\Administrator\Downloads\own-pypxe\files'
+        self.path = r'C:\Users\Administrator\Downloads\own-pypxeserver\files'
         self.kernel = 'ipxe-x86_64.efi'
         self.menu = 'boot.ipxe'
         # logging
@@ -103,17 +103,19 @@ class udp_server:
                 except MalformedPacketError as e:
                     logger.warning(f'(68) {e}')
                     continue
-                dhcp_server = ip_interface(dhcp_packet.options.by_code(54).data).ip
-                if dhcp_server not in another_dhcpd:
-                    logger.info(f'(68) discovering for another DHCPd on LAN') if not another_dhcpd else ''
-                    logger.info(f'(68) another DHCPd detected on your LAN @ {dhcp_server}')
-                    another_dhcpd.append(dhcp_server)
-                    logger.info('(68) {} received, MAC {}, XID {}'.format(
-                        dhcp_packet.msg_type, \
-                        dhcp_packet.chaddr, \
-                        dhcp_packet.xid
-                    ))
-                    logger.debug('(68) msg is %s' % msg)
+                dhcp_server = dhcp_packet.options.by_code(54)
+                if dhcp_server:
+                    dhcp_server = ip_interface(dhcp_server.data).ip
+                    if dhcp_server not in another_dhcpd:
+                        logger.info(f'(68) discovering for another DHCPd on LAN') if not another_dhcpd else ''
+                        logger.info(f'(68) another DHCPd detected on your LAN @ {dhcp_server}')
+                        another_dhcpd.append(dhcp_server)
+                        logger.debug('(68) {} received, MAC {}, XID {}'.format(
+                            dhcp_packet.op, \
+                            dhcp_packet.chaddr, \
+                            dhcp_packet.xid
+                        ))
+                        logger.debug('(68) msg is %s' % msg)
         socks = self.udp_socket()
         return {'dhcpc' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def dhcpd(self, logger):
@@ -138,7 +140,6 @@ class udp_server:
                     ))
                     logger.debug('(67) msg is %s' % msg)
                     user_class = dhcp_packet.options.by_code(77)
-                    file_name = self.menu
                     if user_class:
                         logger.info(f'(67) iPXE user-class detected')
                         file_name = self.menu
@@ -168,6 +169,7 @@ class udp_server:
                     ))
                     offer_packet = offer_packet.asbytes
                     logger.debug(f'(67) offer_packet is {offer_packet}')
+                    sleep(1) if user_class else ''
                     socks.sendto(offer_packet, (str(self.broadcast), 68))
                 else:
                     logger.info('(67) {} discarded, MAC {}, XID {}'.format(
