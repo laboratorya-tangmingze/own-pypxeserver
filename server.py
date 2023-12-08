@@ -53,20 +53,15 @@ class udp_server:
         self.logger.info(f'PATH {self.path}')
         try:
             # dhcpc
-            if dhcpc:
-                self.threadings.update(self.dhcpc(logger=self.get_short_logger('DHCPc')))
+            self.threadings.update(self.dhcpc(logger=self.get_short_logger('DHCPc'))) if dhcpc else dhcpc
             # dhcpd
-            if dhcpd:
-                self.threadings.update(self.dhcpd(logger=self.get_short_logger('DHCPd')))
+            self.threadings.update(self.dhcpd(logger=self.get_short_logger('DHCPd'))) if dhcpd else dhcpd
             # proxy_dhcpd
-            if proxy_dhcpd:
-                self.threadings.update(self.proxy_dhcpd(logger=self.get_short_logger('PorxyDHCPd')))
+            self.threadings.update(self.proxy_dhcpd(logger=self.get_short_logger('PorxyDHCPd'))) if proxy_dhcpd else proxy_dhcpd
             # tftpd
-            if tftpd:
-                self.threadings.update(self.tftpd(logger=self.get_short_logger('TFTPd'), path=self.path))
+            self.threadings.update(self.tftpd(logger=self.get_short_logger('TFTPd'), path=self.path)) if tftpd else tftpd
             # httpd
-            if httpd:
-                self.threadings.update(self.httpd(logger=self.get_short_logger('HTTPd'), path=self.path))
+            self.threadings.update(self.httpd(logger=self.get_short_logger('HTTPd'), path=self.path)) if httpd else httpd
             # thread to start
             [dicts['_thread'].start() for dicts in self.threadings.values() if dicts is not None]
             while all(map(lambda dicts: dicts['_thread'].is_alive(), self.threadings.values())):
