@@ -21,7 +21,7 @@ from time import sleep
 class udp_server:
     def __init__(self, debug=False, log_file='server.log'):
         self.unicast = '0.0.0.0'
-        self.siaddr = '192.168.0.17'
+        self.siaddr = '192.168.0.2'
         self.mask = '255.255.255.0'
         self.router = '192.168.0.251'
         self.dns = '223.5.5.5'
@@ -49,19 +49,24 @@ class udp_server:
         self.logger = getLogger('udp_server')
         # threading
         self.threadings = {}
-    def start(self):
+    def start(self, dhcpc=True, dhcpd=True, proxy_dhcpd=True, tftpd=True, httpd=True):
         self.logger.info(f'PATH {self.path}')
         try:
             # dhcpc
-            self.threadings.update(self.dhcpc(logger=self.get_short_logger('DHCPc')))
+            if dhcpc:
+                self.threadings.update(self.dhcpc(logger=self.get_short_logger('DHCPc')))
             # dhcpd
-            self.threadings.update(self.dhcpd(logger=self.get_short_logger('DHCPd')))
+            if dhcpd:
+                self.threadings.update(self.dhcpd(logger=self.get_short_logger('DHCPd')))
             # proxy_dhcpd
-            self.threadings.update(self.proxy_dhcpd(logger=self.get_short_logger('PorxyDHCPd')))
+            if proxy_dhcpd:
+                self.threadings.update(self.proxy_dhcpd(logger=self.get_short_logger('PorxyDHCPd')))
             # tftpd
-            self.threadings.update(self.tftpd(logger=self.get_short_logger('TFTPd'), path=self.path))
+            if tftpd:
+                self.threadings.update(self.tftpd(logger=self.get_short_logger('TFTPd'), path=self.path))
             # httpd
-            self.threadings.update(self.httpd(logger=self.get_short_logger('HTTPd'), path=self.path))
+            if httpd:
+                self.threadings.update(self.httpd(logger=self.get_short_logger('HTTPd'), path=self.path))
             # thread to start
             [dicts['_thread'].start() for dicts in self.threadings.values() if dicts is not None]
             while all(map(lambda dicts: dicts['_thread'].is_alive(), self.threadings.values())):
@@ -193,7 +198,8 @@ class udp_server:
                         dhcp_packet.xid
                     ))
                     logger.debug('(4011) msg is %s' % msg)
-                    file_name = self.kernel
+                    logger.info(f'(4011) Proxy boot filename empty?')
+                    file_name = dhcp_packet.file if dhcp_packet.file else self.kernel
                     ack_packet = DHCPPacket.Ack(
                         seconds=0, \
                         tx_id=dhcp_packet.xid, \
@@ -202,7 +208,7 @@ class udp_server:
                         use_broadcast=False, \
                         relay=self.unicast, \
                         sname=gethostname().encode('unicode-escape'), \
-                        fname=file_name.encode('unicode-escape'), \
+                        fname=file_name.encode('unicode-escape') if isinstance(file_name, str) else file_name, \
                         option_list=OptionList([
                             options.short_value_to_object(13, round(getsize(join(self.path, file_name))/1024)*2), \
                             options.short_value_to_object(54, ip_interface(self.siaddr).ip.packed), \
@@ -255,4 +261,4 @@ class udp_server:
 
 if __name__ == '__main__':
     server = udp_server(debug=True)
-    server.start()
+    server.start(dhcpc=True, dhcpd=True, proxy_dhcpd=True, tftpd=True, httpd=True)
