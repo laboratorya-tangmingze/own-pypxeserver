@@ -137,9 +137,9 @@ class udp_server:
                     user_class = dhcp_packet.options.by_code(77)
                     if user_class:
                         logger.info(f'(67) iPXE user-class detected')
-                        file_name = self.menu
+                        fname = self.menu
                     else:
-                        file_name = self.kernel
+                        fname = self.kernel
                     offer_packet = DHCPPacket.Offer(
                         seconds=0, \
                         tx_id=dhcp_packet.xid, \
@@ -148,9 +148,9 @@ class udp_server:
                         use_broadcast=True, \
                         relay=self.unicast, \
                         sname=gethostname().encode('unicode-escape'), \
-                        fname=file_name.encode('unicode-escape'), \
+                        fname=fname.encode('unicode-escape'), \
                         option_list=OptionList([
-                            options.short_value_to_object(13, round(getsize(join(self.path, file_name))/1024)*2), \
+                            options.short_value_to_object(13, round(getsize(join(self.path, fname))/1024)*2), \
                             options.short_value_to_object(54, ip_interface(self.siaddr).ip.packed), \
                             options.short_value_to_object(60, 'PXEClient'), \
                             options.short_value_to_object(66, self.siaddr)
@@ -196,7 +196,7 @@ class udp_server:
                     ))
                     logger.debug('(4011) msg is %s' % msg)
                     logger.info(f'(4011) Proxy boot filename empty?')
-                    file_name = dhcp_packet.file if dhcp_packet.file else self.kernel
+                    fname = dhcp_packet.file if dhcp_packet.file else self.kernel
                     ack_packet = DHCPPacket.Ack(
                         seconds=0, \
                         tx_id=dhcp_packet.xid, \
@@ -205,9 +205,9 @@ class udp_server:
                         use_broadcast=False, \
                         relay=self.unicast, \
                         sname=gethostname().encode('unicode-escape'), \
-                        fname=file_name.encode('unicode-escape') if isinstance(file_name, str) else file_name, \
+                        fname=fname.encode('unicode-escape') if isinstance(fname, str) else fname, \
                         option_list=OptionList([
-                            options.short_value_to_object(13, round(getsize(join(self.path, file_name))/1024)*2), \
+                            options.short_value_to_object(13, round(getsize(join(self.path, fname))/1024)*2), \
                             options.short_value_to_object(54, ip_interface(self.siaddr).ip.packed), \
                             options.short_value_to_object(60, 'PXEClient'), \
                             options.short_value_to_object(66, self.siaddr), \
