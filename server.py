@@ -12,17 +12,19 @@ from logging import basicConfig, FileHandler, getLogger, StreamHandler, \
     DEBUG, INFO, \
     debug, info, warning
 from os.path import getsize, join
-from socket import gethostname, socket, \
+from socket import gethostname, inet_aton, inet_ntoa, socket, \
     AF_INET, SOCK_DGRAM, SO_BROADCAST, SO_REUSEADDR, SOL_SOCKET
+from struct import pack, unpack
 from sys import exit
 from threading import Thread
 from time import sleep
 
 class udp_server:
     def __init__(self, debug=False, log_file='server.log'):
-        self.separate = 1
+        self.separate = 0
+        self.mac_to_ipaddr = {}
         self.unicast = '0.0.0.0'
-        self.siaddr = '192.168.0.8'
+        self.siaddr = '192.168.0.9'
         self.mask = '255.255.255.0'
         self.router = '192.168.0.251'
         self.dns = '223.5.5.5'
@@ -30,7 +32,8 @@ class udp_server:
         self.lease_time = 120
         self.begin = '192.168.0.100'
         self.end = '192.168.0.110'
-        self.path = r'C:\Users\Administrator\Downloads\own-pypxeserver\files'
+        self.ipaddr_list = [inet_ntoa(pack('!I', ipaddr)) for ipaddr in range(unpack('!I', inet_aton(self.begin))[0], unpack('!I', inet_aton(self.end))[0])]
+        self.path = r'C:\Users\ecs-user\Downloads\own-pypxeserver\files'
         self.kernel = 'ipxe-x86_64.efi'
         self.menu = 'boot.ipxe'
         # logging
@@ -117,6 +120,13 @@ class udp_server:
         return {'dhcpc' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def dhcpd(self, logger):
         logger.info(f'(67) {self.unicast} started...')
+        def _mac_to_yiaddr(chaddr):
+            if chaddr not in self.mac_to_ipaddr:
+                yiaddr = self.ipaddr_list[0]
+                self.ipaddr_list.pop(0)
+                self.mac_to_ipaddr.update({chaddr:yiaddr})
+                return yiaddr
+            return self.mac_to_ipaddr[chaddr]
         def _separate(msg, dhcp_packet):
             if dhcp_packet.msg_type == 'DHCPDISCOVER':
                 logger.info('(67) {} received, MAC {}, XID {}'.format(
@@ -177,19 +187,25 @@ class udp_server:
                     fname = self.menu
                 else:
                     fname = self.kernel
+                yiaddr = _mac_to_yiaddr(dhcp_packet.chaddr)
+                broadcast = ip_interface(f'{self.siaddr}/{self.mask}').network.broadcast_address
                 offer_packet = DHCPPacket.Offer(
                     seconds=0, \
                     tx_id=dhcp_packet.xid, \
                     mac_addr=dhcp_packet.chaddr, \
-                    yiaddr=self.unicast, \
+                    yiaddr=yiaddr, \
                     use_broadcast=True, \
                     relay=self.unicast, \
                     sname=gethostname().encode('unicode-escape'), \
                     fname=fname.encode('unicode-escape'), \
                     option_list=OptionList([
+                        options.short_value_to_object(1, self.mask), \
+                        options.bytes_to_object(b'\x03\x04' + ip_interface(f'{self.router}').ip.packed), \
+                        options.bytes_to_object(b'\x06\x04' + ip_interface(f'{self.dns}').ip.packed), \
                         options.short_value_to_object(13, round(getsize(join(self.path, fname))/1024)*2), \
+                        options.short_value_to_object(28, broadcast), \
+                        options.short_value_to_object(51, self.lease_time), \
                         options.short_value_to_object(54, ip_interface(self.siaddr).ip.packed), \
-                        options.short_value_to_object(60, 'PXEClient'), \
                         options.short_value_to_object(66, self.siaddr)
                     ])
                 )
@@ -210,23 +226,32 @@ class udp_server:
                     dhcp_packet.xid
                 ))
                 logger.debug('(67) msg is %s' % msg)
-                logger.info(f'(67) Proxy boot filename empty?')
-                fname = dhcp_packet.file if dhcp_packet.file else self.kernel
+                user_class = dhcp_packet.options.by_code(77)
+                if user_class:
+                    logger.info(f'(67) iPXE user-class detected')
+                    fname = self.menu
+                else:
+                    fname = self.kernel
+                yiaddr = _mac_to_yiaddr(dhcp_packet.chaddr)
+                broadcast = ip_interface(f'{self.siaddr}/{self.mask}').network.broadcast_address
                 ack_packet = DHCPPacket.Ack(
                     seconds=0, \
                     tx_id=dhcp_packet.xid, \
                     mac_addr=dhcp_packet.chaddr, \
-                    yiaddr=self.unicast, \
-                    use_broadcast=False, \
+                    yiaddr=yiaddr, \
+                    use_broadcast=True, \
                     relay=self.unicast, \
                     sname=gethostname().encode('unicode-escape'), \
                     fname=fname.encode('unicode-escape') if isinstance(fname, str) else fname, \
                     option_list=OptionList([
+                        options.short_value_to_object(1, self.mask), \
+                        options.bytes_to_object(b'\x03\x04' + ip_interface(f'{self.router}').ip.packed), \
+                        options.bytes_to_object(b'\x06\x04' + ip_interface(f'{self.dns}').ip.packed), \
                         options.short_value_to_object(13, round(getsize(join(self.path, fname))/1024)*2), \
+                        options.short_value_to_object(28, broadcast), \
+                        options.short_value_to_object(51, self.lease_time), \
                         options.short_value_to_object(54, ip_interface(self.siaddr).ip.packed), \
-                        options.short_value_to_object(60, 'PXEClient'), \
-                        options.short_value_to_object(66, self.siaddr), \
-                        options.bytes_to_object(uuid_guid_based_client.asbytes)
+                        options.short_value_to_object(66, self.siaddr)
                     ])
                 )
                 ack_packet.siaddr = ip_interface(self.siaddr).ip
@@ -237,7 +262,7 @@ class udp_server:
                 ))
                 ack_packet = ack_packet.asbytes
                 logger.debug(f'(67) ack_packet is {ack_packet}')
-                socks.sendto(ack_packet, (str(dhcp_packet.ciaddr), 68))
+                socks.sendto(ack_packet, (str(self.broadcast), 68))
         def _stop():
             logger.info(f'(67) stopped...')
         def _thread():
