@@ -257,7 +257,7 @@ class udp_server:
                 ack_packet.siaddr = ip_interface(self.siaddr).ip
                 logger.info('(67) {} sent, {}:68, XID {}'.format(
                     ack_packet.msg_type, \
-                    ack_packet.ciaddr, \
+                    self.broadcast, \
                     ack_packet.xid
                 ))
                 ack_packet = ack_packet.asbytes
