@@ -26,6 +26,10 @@ PS C:\Users\Administrator\Downloads\own-pypxeserver> # Start server.py
 PS C:\Users\Administrator\Downloads\own-pypxeserver> Remove-Item .\*.log ; python .\server.py
 ```
 
+## Infrastructure
+
+![pypxeserver-soc.svg](pypxeserver-soc.svg)
+
 ## Log
 
 proxy is self.separate = 1
