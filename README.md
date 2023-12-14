@@ -28,7 +28,7 @@ PS C:\Users\Administrator\Downloads\own-pypxeserver> Remove-Item .\*.log ; pytho
 
 ## Infrastructure
 
-![pypxeserver-soc.svg](pypxeserver-soc.svg)
+![pypxeserver-soc.png](pypxeserver-soc.png)
 
 ## Log
 
