@@ -35,7 +35,6 @@ PS C:\Users\Administrator\Downloads\own-pypxeserver> Remove-Item .\*.log ; pytho
 proxy is self.separate = 1
 
 ```plain
-PS C:\Users\Administrator\Downloads\own-pypxeserver> Remove-Item .\*.log ; python .\server.py
 2023-12-21 11:01:45.866 udp_server PATH C:\Users\Administrator\Downloads\own-pypxeserver\files
 2023-12-21 11:01:45.867 DHCPc (68) 0.0.0.0 started...
 2023-12-21 11:01:45.868 DHCPd (67) 0.0.0.0 started...
