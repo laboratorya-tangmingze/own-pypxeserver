@@ -13,7 +13,7 @@ from logging import basicConfig, FileHandler, getLogger, StreamHandler, \
     debug, info, warning
 from os.path import getsize, join
 from socket import gethostname, inet_aton, inet_ntoa, socket, \
-    AF_INET, SOCK_DGRAM, SO_BROADCAST, SO_REUSEADDR, SOL_SOCKET
+    AF_INET, SO_BROADCAST, SO_REUSEADDR, SOCK_DGRAM, SOL_SOCKET
 from struct import pack, unpack
 from sys import exit
 from threading import Thread
@@ -37,10 +37,7 @@ class udp_server:
         self.kernel = 'ipxe-x86_64.efi'
         self.menu = 'boot.ipxe'
         # logging
-        if debug:
-            logging_level = DEBUG
-        else:
-            logging_level = INFO
+        logging_level = DEBUG if debug else INFO
         basicConfig(
             level=logging_level,
             format='%(asctime)s.%(msecs)03d %(name)s %(message)s',
