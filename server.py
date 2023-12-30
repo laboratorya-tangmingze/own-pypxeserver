@@ -9,8 +9,7 @@ from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from ipaddress import ip_interface
 from logging import basicConfig, FileHandler, getLogger, StreamHandler, \
-    DEBUG, INFO, \
-    debug, info, warning
+    DEBUG, INFO
 from os.path import getsize, join
 from socket import gethostname, inet_aton, inet_ntoa, socket, \
     AF_INET, SO_BROADCAST, SO_REUSEADDR, SOCK_DGRAM, SOL_SOCKET
