@@ -327,13 +327,6 @@ class udp_server:
         socks = self.udp_socket()
         return {'proxy_dhcpd' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def tftpd(self, logger, path):
-        '''
-        info(f'TFTPd (69) {tftp-server} started...')
-        info(f'TFTPd (69) DoReadFile boot.ipxe B 1432 T 74')
-        info(f'TFTPd (69) DoReadFile boot.ipxe.cfg B 1432 T 351')
-        info(f'TFTPd (69) DoReadFile menu.ipxe B 1432 T 1709')
-        info(f'TFTPd (69) stopped...')
-        '''
         logger.info(f'(69) {self.unicast} started...')
         def _stop():
             logger.info(f'(69) stopped...')
