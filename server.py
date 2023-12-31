@@ -3,7 +3,7 @@
 from dhcppython.exceptions import MalformedPacketError
 from dhcppython.options import options, OptionList
 from dhcppython.packet import DHCPPacket
-from tftpy import TftpServer
+from tftp_server import TftpServer
 
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
@@ -334,14 +334,12 @@ class udp_server:
         info(f'TFTPd (69) DoReadFile menu.ipxe B 1432 T 1709')
         info(f'TFTPd (69) stopped...')
         '''
-        logger = getLogger('tftpy')
-        logger.setLevel(INFO)
         logger.info(f'(69) {self.unicast} started...')
         def _stop():
             logger.info(f'(69) stopped...')
         def _thread():
             server.listen(self.unicast, 69)
-        server = TftpServer(tftproot=path)
+        server = TftpServer(tftproot=path, logger=logger)
         return {'tftpd' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def httpd(self, logger, path):
         '''
