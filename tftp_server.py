@@ -43,16 +43,6 @@ import time
 from errno import EINTR
 
 # logging
-logging_level = INFO
-basicConfig(
-    level=logging_level,
-    format='%(asctime)s.%(msecs)03d %(name)s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    handlers=[
-        FileHandler('server.log', mode='a', encoding=None),
-        StreamHandler()
-    ]
-)
 log = getLogger("tftpy.TftpServer")
 
 MIN_BLKSIZE = 8
