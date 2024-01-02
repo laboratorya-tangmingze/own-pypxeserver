@@ -5,7 +5,7 @@
 
 [msoulier/tftpy | Github](https://github.com/msoulier/tftpy/)
 
-# LICENSE
+# License
 
 The MIT License
 
