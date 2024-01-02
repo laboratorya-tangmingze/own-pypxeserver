@@ -21,7 +21,7 @@ from time import sleep
 class udp_server:
     def __init__(self, debug=False, log_file='server.log'):
         self.separate = 1
-        self.mac_to_ipaddr = {}
+        self.chaddr_to_ipaddr = {}
         self.unicast = '0.0.0.0'
         self.siaddr = '192.168.0.8'
         self.mask = '255.255.255.0'
@@ -116,13 +116,13 @@ class udp_server:
         return {'dhcpc' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def dhcpd(self, logger):
         logger.info(f'(67) {self.unicast} started...')
-        def _mac_to_yiaddr(chaddr):
-            if chaddr not in self.mac_to_ipaddr:
+        def _chaddr_to_yiaddr(chaddr):
+            if chaddr not in self.chaddr_to_ipaddr:
                 yiaddr = self.ipaddr_list[0]
                 self.ipaddr_list.pop(0)
-                self.mac_to_ipaddr.update({chaddr:yiaddr})
+                self.chaddr_to_ipaddr.update({chaddr:yiaddr})
                 return yiaddr
-            return self.mac_to_ipaddr[chaddr]
+            return self.chaddr_to_ipaddr[chaddr]
         def _separate(msg, dhcp_packet):
             if dhcp_packet.msg_type == 'DHCPDISCOVER':
                 logger.info('(67) {} received, MAC {}, XID {}'.format(
@@ -183,7 +183,7 @@ class udp_server:
                     fname = self.menu
                 else:
                     fname = self.kernel
-                yiaddr = _mac_to_yiaddr(dhcp_packet.chaddr)
+                yiaddr = _chaddr_to_yiaddr(dhcp_packet.chaddr)
                 broadcast = ip_interface(f'{self.siaddr}/{self.mask}').network.broadcast_address
                 offer_packet = DHCPPacket.Offer(
                     seconds=0, \
@@ -228,7 +228,7 @@ class udp_server:
                     fname = self.menu
                 else:
                     fname = self.kernel
-                yiaddr = _mac_to_yiaddr(dhcp_packet.chaddr)
+                yiaddr = _chaddr_to_yiaddr(dhcp_packet.chaddr)
                 broadcast = ip_interface(f'{self.siaddr}/{self.mask}').network.broadcast_address
                 ack_packet = DHCPPacket.Ack(
                     seconds=0, \
