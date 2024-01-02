@@ -1,8 +1,7 @@
 # coding: utf-8
 
-from dhcppython.exceptions import MalformedPacketError
-from dhcppython.options import options, OptionList
-from dhcppython.packet import DHCPPacket
+from dhcppython import DHCPPacket, OptionList, MalformedPacketError, \
+    options
 from tftp_server import TftpServer
 
 from functools import partial
@@ -23,7 +22,7 @@ class udp_server:
         self.separate = 1
         self.chaddr_to_ipaddr = {}
         self.unicast = '0.0.0.0'
-        self.siaddr = '192.168.0.8'
+        self.siaddr = '192.168.0.7'
         self.mask = '255.255.255.0'
         self.router = '192.168.0.251'
         self.dns = '223.5.5.5'

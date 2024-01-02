@@ -19,9 +19,6 @@
 ```plain
 PS C:\Users\Administrator\Downloads\own-pypxeserver> # Install [2021.05 python-3.8.10-amd64 | Huaweicloud](https://repo.huaweicloud.com/python/3.8.10/python-3.8.10-amd64.exe)
 PS C:\Users\Administrator\Downloads\own-pypxeserver>
-PS C:\Users\Administrator\Downloads\own-pypxeserver> # Install package to dhcppython
-PS C:\Users\Administrator\Downloads\own-pypxeserver> pip install -i https://pypi.tuna.tsinghua.edu.cn/simple dhcppython
-PS C:\Users\Administrator\Downloads\own-pypxeserver>
 PS C:\Users\Administrator\Downloads\own-pypxeserver> # Start server.py
 PS C:\Users\Administrator\Downloads\own-pypxeserver> Remove-Item .\*.log ; python .\server.py
 ```
