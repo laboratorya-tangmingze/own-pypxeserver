@@ -904,7 +904,7 @@ class TftpStateServerRecvRRQ(TftpServerState):
         """Handle an initial RRQ packet as a server."""
         sendoack = self.serverInitial(pkt, raddress, rport)
         path = self.full_path
-        log.info('DoReadFile %s B %s T %s', os.path.basename(path), os.path.getsize(path), self.context.options["tsize"] if 'tsize' in self.context.options else 0)
+        log.info(f'DoReadFile {os.path.basename(path)} B {os.path.getsize(path)} T 0')
         if os.path.exists(path):
             self.context.fileobj = open(path, "rb")
         elif self.context.dyn_file_func:
@@ -1106,7 +1106,7 @@ class TftpServer(TftpSession):
     upload_open is a callable that is triggered on every upload with the
     requested destination path and server context. It must either return a
     file-like object ready for writing or None if the path is invalid."""
-    def __init__(self, tftproot="/tftpboot", dyn_file_func=None, upload_open=None, logger=getLogger("tftpy.TftpServer")):
+    def __init__(self, tftproot="/tftpboot", dyn_file_func=None, upload_open=None, logger=log):
         global log
         log = logger
         self.listenip = None
