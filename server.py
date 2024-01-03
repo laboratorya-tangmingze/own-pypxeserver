@@ -334,11 +334,6 @@ class udp_server:
         server = TftpServer(tftproot=path, logger=logger)
         return {'tftpd' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
     def httpd(self, logger, path):
-        '''
-        info(f'HTTPd (80) {http-server} started...')
-        info(f'')
-        info(f'HTTPd (80) stopped...')
-        '''
         logger.info(f'(80) {self.unicast} started...')
         def _stop():
             logger.info(f'(80) stopped...')
