@@ -339,7 +339,7 @@ class udp_server:
             logger.info(f'(80) stopped...')
         def _thread():
             server.serve_forever()
-        server = HTTPServer((self.unicast, 80), partial(SimpleHTTPRequestHandler, directory=path))
+        server = HTTPServer((self.unicast, 80), partial(SimpleHTTPRequestHandler, directory=path, logger=logger))
         return {'httpd' : {'_thread' : Thread(target=_thread, daemon=True), '_stop' : _stop}}
 
 if __name__ == '__main__':
