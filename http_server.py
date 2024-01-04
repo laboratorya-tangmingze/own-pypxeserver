@@ -298,11 +298,27 @@ import datetime
 import email.utils
 import html
 import io
+import socket
+import socketserver
 
 log = getLogger('HTTPd')
+address = ()
 
 class HTTPServer(HTTPServer):
-    pass
+    def __init__(self, server_address, RequestHandlerClass, bind_and_activate=True):
+        """Constructor.  May be extended, do not override."""
+        socketserver.BaseServer.__init__(self, server_address, RequestHandlerClass)
+        global address
+        address = server_address
+        self.socket = socket.socket(self.address_family,
+                                    self.socket_type)
+        if bind_and_activate:
+            try:
+                self.server_bind()
+                self.server_activate()
+            except:
+                self.server_close()
+                raise
 
 class SimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
     index_pages = ("index.html", "index.htm")
@@ -385,7 +401,7 @@ class SimpleHTTPRequestHandler(SimpleHTTPRequestHandler):
         """
         path = self.translate_path(self.path)
         if os.path.isfile(path):
-            log.info(f'Do{self.command.capitalize()}File {os.path.basename(path)} B {os.path.getsize(path)} T 0')
+            log.info(f'({address[1]}) Do{self.command.capitalize()}File {os.path.basename(path)} B {os.path.getsize(path)} T 0')
         f = None
         if os.path.isdir(path):
             parts = urllib.parse.urlsplit(self.path)
