@@ -44,6 +44,7 @@ from errno import EINTR
 
 # logging
 log = getLogger("tftpy.TftpServer")
+address = ()
 
 MIN_BLKSIZE = 8
 DEF_BLKSIZE = 512
@@ -904,7 +905,8 @@ class TftpStateServerRecvRRQ(TftpServerState):
         """Handle an initial RRQ packet as a server."""
         sendoack = self.serverInitial(pkt, raddress, rport)
         path = self.full_path
-        log.info(f'DoReadFile {os.path.basename(path)} B {os.path.getsize(path)} T 0')
+        if os.path.isfile(path):
+            log.info(f'({address[1]}) DoReadFile {os.path.basename(path)} B {os.path.getsize(path)} T 0')
         if os.path.exists(path):
             self.context.fileobj = open(path, "rb")
         elif self.context.dyn_file_func:
@@ -1141,6 +1143,8 @@ class TftpServer(TftpSession):
         """Start a server listening on the supplied interface and port. This
         defaults to INADDR_ANY (all interfaces) and UDP port 69. You can also
         supply a different socket timeout value, if desired."""
+        global address
+        address = (listenip, listenport)
         tftp_factory = TftpPacketFactory()
         if not listenip:
             listenip = "0.0.0.0"

@@ -19,7 +19,7 @@ from time import sleep
 
 class udp_server:
     def __init__(self, debug=False, log_file='server.log'):
-        self.separate = 0
+        self.separate = 1
         self.chaddr_to_ipaddr = {}
         self.unicast = '0.0.0.0'
         self.siaddr = '192.168.0.9'
@@ -31,7 +31,7 @@ class udp_server:
         self.begin = '192.168.0.100'
         self.end = '192.168.0.110'
         self.ipaddr_list = [inet_ntoa(pack('!I', ipaddr)) for ipaddr in range(unpack('!I', inet_aton(self.begin))[0], unpack('!I', inet_aton(self.end))[0])]
-        self.path = r'C:\Users\ecs-user\Downloads\own-pypxeserver\files'
+        self.path = r'C:\Users\Administrator\Downloads\own-pypxeserver\files'
         self.kernel = 'ipxe-x86_64.efi'
         self.menu = 'boot.ipxe'
         # logging
